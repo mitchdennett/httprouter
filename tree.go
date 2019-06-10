@@ -327,7 +327,8 @@ func (n *node) insertChild(numParams uint8, path, fullPath string, handle Handle
 // If no handle can be found, a TSR (trailing slash redirect) recommendation is
 // made if a handle exists with an extra (without the) trailing slash for the
 // given path.
-func (n *node) getValue(path string) (handle Handle, p Params, tsr bool) {
+func (n *node) getValue(path string) (handle Handle, p Params, tsr bool, ret_path string) {
+	full_path := "/"
 walk: // outer loop for walking the tree
 	for {
 		if len(path) > len(n.path) {
@@ -341,6 +342,7 @@ walk: // outer loop for walking the tree
 					for i := 0; i < len(n.indices); i++ {
 						if c == n.indices[i] {
 							n = n.children[i]
+							full_path += n.path
 							continue walk
 						}
 					}
@@ -378,6 +380,7 @@ walk: // outer loop for walking the tree
 						if len(n.children) > 0 {
 							path = path[end:]
 							n = n.children[0]
+							full_path += n.path
 							continue walk
 						}
 
@@ -387,6 +390,8 @@ walk: // outer loop for walking the tree
 					}
 
 					if handle = n.handle; handle != nil {
+						full_path += n.path
+						ret_path = full_path
 						return
 					} else if len(n.children) == 1 {
 						// No handle found. Check if a handle for this path + a
@@ -409,6 +414,8 @@ walk: // outer loop for walking the tree
 					p[i].Value = path
 
 					handle = n.handle
+					full_path += n.path
+					ret_path = full_path
 					return
 
 				default:
@@ -419,6 +426,7 @@ walk: // outer loop for walking the tree
 			// We should have reached the node containing the handle.
 			// Check if this node has a handle registered.
 			if handle = n.handle; handle != nil {
+				ret_path = full_path
 				return
 			}
 
